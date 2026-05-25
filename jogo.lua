@@ -1,3 +1,9 @@
+-- Ideias: Implementar validação de conflito de posições
+-- Usar map como gerenciamento para melhorar desempenho
+-- Fases
+-- Turnos com tempo limitado
+-- Projeteis diferentes (perfurante, disperso, rápido, etc.)
+
 local comprimento = 20
 local largura = 10
 local charJogador = "J"
