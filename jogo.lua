@@ -3,6 +3,7 @@ local largura = 10
 local charJogador = "P"
 local charInimigo = "O"
 
+-- Não usaremos o map para gerenciar nada, apenas para imprimir o estado atual do jogo
 local map = {
   height = largura,
   width = comprimento,
@@ -19,30 +20,31 @@ function CriarMapa()
   end
 end
 
-function ImprimirMapa()
-  local xJogador, yJogador = Jogador:posicao()
+function LimparMapa()
+  for y = 1, map.height do
+    for x = 1, map.width do
+      map.tiles[y][x] = "."
+    end
+  end
+end
 
+
+-- Por ser mais fácil, para imprimir o mapa, primeiro limpamos ele, depois colocamos os objetos e entidades no mapa
+function ImprimirMapa()
+  LimparMapa()
+
+  for key, inimigo in ipairs(Inimigos) do
+    local xInimigo, yInimigo = inimigo:posicao()
+    map.tiles[yInimigo][xInimigo] = charInimigo
+  end
+
+  local xJogador, yJogador = Jogador:posicao()
+  map.tiles[yJogador][xJogador] = charJogador
+  
   io.write("\n")
   for y = 1, map.height do
     for x = 1, map.width do
-      -- Se a posição atual for a do jogador, imprime o caractere do jogador
-      if x == xJogador and y == yJogador then
-        io.write(charJogador)
-      else
-        -- Percorra todos os inimigos para verificar se algum deles está na posição atual
-        local inimigoPresente = false
-        for _, inimigo in ipairs(Inimigos) do
-          local xInimigo, yInimigo = inimigo:posicao()
-          if x == xInimigo and y == yInimigo then
-            io.write(charInimigo)
-            inimigoPresente = true
-            break
-          end
-        end
-        if not inimigoPresente then
-          io.write(map.tiles[y][x])
-        end
-      end
+      io.write(map.tiles[y][x])
     end
     io.write("\n")
   end
@@ -52,7 +54,6 @@ end
 function InicializarJogador()
   local x, y = GerarPosicaoAleatoria()
   local jogador = ClassJogador.new(x,y)
-  -- AtualizarPosNoMapa(jogador, jogador.posX, jogador.posY)
   return jogador
 end
 
@@ -61,7 +62,6 @@ function InicializarInimigos(quantidade)
   for i = 1, quantidade do
   local x, y = GerarPosicaoAleatoria()
     local inimigo = ClassInimigo.new(x, y)
-    -- AtualizarPosNoMapa(inimigo, inimigo.posX, inimigo.posY)
     table.insert(inimigos, inimigo)
   end
   return inimigos
@@ -78,17 +78,6 @@ function GerarPosicaoAleatoria()
   local y = math.random(1, map.height)
   return x, y
 end
--- Função para atualizar a posição de uma entidade no mapa
--- Chamar essa função antes de atualizar o objeto da entidade, se não perdemos as posições do self
--- function AtualizarPosNoMapa(self, novaPosX, novaPosY)
---   map.tiles[self.posY][self.posX] = "."
---   if self.tipo == "jogador" then
---     map.tiles[novaPosY][novaPosX] = charJogador
---   elseif self.tipo == "inimigo" then
---     map.tiles[novaPosY][novaPosX] = charInimigo
---   end
--- end
-
 
 -- CLASSES
 -- Declarando classe abstrata, que possui uma posição
@@ -108,7 +97,6 @@ function ClassEntidade:mover(dx, dy)
   local novaPosY = self.posY + dy
 
   if PosicaoValida(novaPosX, novaPosY) then
-    -- AtualizarPosNoMapa(self, novaPosX, novaPosY)
     self.posX = novaPosX
     self.posY = novaPosY
     return true
@@ -146,14 +134,40 @@ function LidarComandos(digitado)
   -- Pegando o último caractere do texto digitado (para caso seja digitado um "aa" sem querer, por exemplo)
   local comando = string.sub(digitado, #digitado, #digitado)
   
+  -- Comando W
   if comando == "w" then
     Jogador:mover(0, -1)
-  elseif comando == "s" then
-    Jogador:mover(0, 1)
+  -- Comando A
   elseif comando == "a" then
     Jogador:mover(-1, 0)
+  -- Comando S
+  elseif comando == "s" then
+    Jogador:mover(0, 1)
+  -- Comando D
   elseif comando == "d" then
     Jogador:mover(1, 0)
+  else
+    -- Comando desconhecido
+    return false 
+  end
+
+  return true
+end
+
+-- Função que lida com a lógica principal do jogo, como movimentação dos inimigos e verificação de colisões
+function ProximoTurno()
+  local xJogador, yJogador = Jogador:posicao()
+  for key, inimigo in ipairs(Inimigos) do
+    -- Movimentação aleatória do inimigo em alguma direção
+    local dx = math.random(-1, 1)
+    local dy = math.random(-1, 1)
+    inimigo:mover(dx, dy)
+    -- Pegando a posição por meio do método já realiza as validações necessárias
+    local xInimigo, yInimigo = inimigo:posicao()
+    if xInimigo == xJogador and yInimigo == yJogador then
+      print("Você foi pego por um inimigo! Fim de jogo.")
+      os.exit()
+    end
   end
 end
 
@@ -167,6 +181,7 @@ function Main()
     ImprimirMapa()
     local input = io.read()
     LidarComandos(input)
+    ProximoTurno()
   end
 end
 
