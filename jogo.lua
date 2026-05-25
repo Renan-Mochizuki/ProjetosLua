@@ -1,6 +1,6 @@
 local comprimento = 20
 local largura = 10
-local charJogador = "P"
+local charJogador = "J"
 local charInimigo = "O"
 local charProjetil = "*"
 -- Quantos turnos o jogador precisa esperar para poder disparar outro projetil
@@ -130,7 +130,7 @@ function ClassJogador:DispararProjetil(dx, dy)
   if CooldownProjetil > 0 then
     return false
   end
-  
+
   local projetil = ClassProjetil.new(self.posX, self.posY, dx, dy)
   table.insert(Projeteis, projetil)
   CooldownProjetil = tempoCooldownProjetil + 1
@@ -172,44 +172,44 @@ function LidarComandos(digitado)
   
   -- Mover
   if comando == "q" then
-    Jogador:mover(-1, -1)
+    return Jogador:mover(-1, -1)
   elseif comando == "w" then
-    Jogador:mover(0, -1)
+    return Jogador:mover(0, -1)
   elseif comando == "e" then
-    Jogador:mover(1, -1)
+    return Jogador:mover(1, -1)
   elseif comando == "a" then
-    Jogador:mover(-1, 0)
+    return Jogador:mover(-1, 0)
   elseif comando == "d" then
-    Jogador:mover(1, 0)
+    return Jogador:mover(1, 0)
   elseif comando == "z" then
-    Jogador:mover(-1, 1)
+    return Jogador:mover(-1, 1)
   elseif comando == "x" or comando == "s" then
-    Jogador:mover(0, 1)
+    return Jogador:mover(0, 1)
   elseif comando == "c" then
-    Jogador:mover(1, 1)
+    return Jogador:mover(1, 1)
   -- Disparar projetil 
   elseif comando == "Q" then
-    Jogador:DispararProjetil(-1, -1)
+    return Jogador:DispararProjetil(-1, -1)
   elseif comando == "W" then
-    Jogador:DispararProjetil(0, -1)
+    return Jogador:DispararProjetil(0, -1)
   elseif comando == "E" then
-    Jogador:DispararProjetil(1, -1)
+    return Jogador:DispararProjetil(1, -1)
   elseif comando == "A" then
-    Jogador:DispararProjetil(-1, 0)
+    return Jogador:DispararProjetil(-1, 0)
   elseif comando == "D" then
-    Jogador:DispararProjetil(1, 0)
+    return Jogador:DispararProjetil(1, 0)
   elseif comando == "Z" then
-    Jogador:DispararProjetil(-1, 1)
+    return Jogador:DispararProjetil(-1, 1)
   elseif comando == "X" or comando == "S" then
-    Jogador:DispararProjetil(0, 1)
+    return Jogador:DispararProjetil(0, 1)
   elseif comando == "C" then
-    Jogador:DispararProjetil(1, 1)
+    return Jogador:DispararProjetil(1, 1)
   -- Comando desconhecido
+  elseif comando == "r" or comando == "R" then
+    return true
   else
     return false
   end
-
-  return true
 end
 
 -- Função que lida com a lógica principal do jogo, como movimentação dos inimigos e verificação de colisões
@@ -270,9 +270,16 @@ function Main()
   local quantidadeInimigos;
   
   repeat
-    io.write("Digite o numero de inimigos, ex: 5\n")
+    print("Digite o numero de inimigos, ex: 5")
     quantidadeInimigos = tonumber(io.read())
   until quantidadeInimigos and quantidadeInimigos > 0
+
+  print("Objetivo: derrotar todos os inimigos (O) usando projeteis.")
+  print("Cada turno voce realiza um comando (se mover ou disparar um projetil).")
+  print("E a cada turno os inimigos se movem aleatoriamente\n")
+  print("Voce pode se mover para qualquer lado, usando: q w e a s d z x c.")
+  print("Voce pode disparar um projetil para qualquer direcao, usando as mesmas teclas em maisculo (possui cooldown).")
+  print("r para passar o turno sem fazer nada.")
 
   Jogador = InicializarJogador()
   Inimigos = InicializarInimigos(quantidadeInimigos)
