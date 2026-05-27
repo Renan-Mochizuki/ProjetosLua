@@ -5,6 +5,7 @@ local gameConfig = require("gameConfig")
 function PosicaoValida(x, y)
   return x >= 1 and x <= gameConfig.width and y >= 1 and y <= gameConfig.height
 end
+
 -- Função auxiliar para gerar uma posição aleatória dentro do mapa
 function GerarPosicaoAleatoria(offsetX, offsetY)
   local limiteMinX = math.max(1, math.floor(offsetX or 1))
@@ -17,7 +18,14 @@ function GerarPosicaoAleatoria(offsetX, offsetY)
   return x, y
 end
 
+-- Função auxiliar para fazer uma animação linear, retorna a posição interpolada entre origem e destino com base no progresso (0 a 1)
+function Interpolar(origem, destino, progresso)
+  return origem + (destino - origem) * progresso
+end
+
 return {
   PosicaoValida = PosicaoValida,
-  GerarPosicaoAleatoria = GerarPosicaoAleatoria
+  GerarPosicaoAleatoria = GerarPosicaoAleatoria,
+  Interpolar = Interpolar,
+  CalcularDestinoSeta = CalcularDestinoSeta
 }
