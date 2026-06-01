@@ -12,10 +12,12 @@ local tempoAtualAnimacao = 0
 local acaoDisponivel = true
 local turnoEmAnimacao = false
 
+local imagemInimigo = love.graphics.newImage("assets/characters/inimigo.png")
+
 Jogador = nil
 Inimigos = {}
 local setaJogador = {}
-local proximoTurnoDados = {}
+local dadosProximoTurno = {}
 
 -- FUNÇÕES DE INICIALIZAÇÃO
 function InicializarJogador()
@@ -34,22 +36,25 @@ function InicializarJogador()
   Jogador.maxDeslocamento = gameConfig.jogadorMaxDeslocamento
 end
 
+function InicializarInimigo()
+  local escalaInimigo = 0.6
+  local offsetX = (imagemInimigo:getWidth() * escalaInimigo) / 2
+  local offsetY = (imagemInimigo:getHeight() * escalaInimigo) / 2
+  local x, y = utils.GerarPosicaoAleatoria(offsetX, offsetY)
+  local inimigo = classes.Inimigo.new(x, y)
+  inimigo.imagem = imagemInimigo
+  inimigo.escala = escalaInimigo
+  inimigo.offsetX = offsetX
+  inimigo.offsetY = offsetY
+  inimigo.desenhoX = x
+  inimigo.desenhoY = y
+  inimigo.maxDeslocamento = gameConfig.inimigoMaxDeslocamento
+  table.insert(Inimigos, inimigo)
+end
+
 function InicializarInimigos(quantidade)
-  local imagemInimigo = love.graphics.newImage("assets/characters/inimigo.png")
   for i = 1, quantidade do
-    local escalaInimigo = 0.6
-    local offsetX = (imagemInimigo:getWidth() * escalaInimigo) / 2
-    local offsetY = (imagemInimigo:getHeight() * escalaInimigo) / 2
-    local x, y = utils.GerarPosicaoAleatoria(offsetX, offsetY)
-    local inimigo = classes.Inimigo.new(x, y)
-    inimigo.imagem = imagemInimigo
-    inimigo.escala = escalaInimigo
-    inimigo.offsetX = offsetX
-    inimigo.offsetY = offsetY
-    inimigo.desenhoX = x
-    inimigo.desenhoY = y
-    inimigo.maxDeslocamento = gameConfig.inimigoMaxDeslocamento
-    table.insert(Inimigos, inimigo)
+    InicializarInimigo()
   end
 end
 
@@ -59,9 +64,9 @@ function InicializarSeta()
   setaJogador.vertices = {Jogador.posX, Jogador.posY, Jogador.posX + Jogador.maxDeslocamento, Jogador.posY}
 end
 
-function InicializarProximoTurnoDados()
-  proximoTurnoDados.jogadorX = Jogador.posX
-  proximoTurnoDados.jogadorY = Jogador.posY
+function InicializarDadosProximoTurno()
+  dadosProximoTurno.jogadorX = Jogador.posX
+  dadosProximoTurno.jogadorY = Jogador.posY
 end
 
 -- FUNÇÕES DE CÁLCULO
@@ -83,10 +88,23 @@ function AtualizarSetaPos(xMouse, yMouse)
 end
 
 -- Função que recebe as coordenadas do mouse e marca a posição do jogador para o próximo turno de acordo com o maxDeslocamento do Jogador
-function AtualizarJogadorPos(xMouse, yMouse)
+function AgendarJogadorPos(xMouse, yMouse)
   local x, y = CalcularDestinoSeta(xMouse, yMouse)
-  proximoTurnoDados.jogadorX = x
-  proximoTurnoDados.jogadorY = y
+  dadosProximoTurno.jogadorX = x
+  dadosProximoTurno.jogadorY = y
+end
+
+function PrepararAnimacaoEntidade(entidade, destinoX, destinoY)
+  entidade.animacao = {
+    inicioX = entidade.posX,
+    inicioY = entidade.posY,
+    destinoX = destinoX,
+    destinoY = destinoY
+  }
+  entidade.posX = destinoX
+  entidade.posY = destinoY
+  entidade.desenhoX = entidade.animacao.inicioX
+  entidade.desenhoY = entidade.animacao.inicioY
 end
 
 function AtualizarAnimacaoTurno(dt)
@@ -123,22 +141,9 @@ function AtualizarAnimacaoTurno(dt)
   end
 end
 
-function PrepararAnimacaoEntidade(entidade, destinoX, destinoY)
-  entidade.animacao = {
-    inicioX = entidade.posX,
-    inicioY = entidade.posY,
-    destinoX = destinoX,
-    destinoY = destinoY
-  }
-  entidade.posX = destinoX
-  entidade.posY = destinoY
-  entidade.desenhoX = entidade.animacao.inicioX
-  entidade.desenhoY = entidade.animacao.inicioY
-end
-
 -- FUNÇÕES DE MOVIMENTAÇÃO
 function MoverJogador()
-  PrepararAnimacaoEntidade(Jogador, proximoTurnoDados.jogadorX, proximoTurnoDados.jogadorY)
+  PrepararAnimacaoEntidade(Jogador, dadosProximoTurno.jogadorX, dadosProximoTurno.jogadorY)
 end
 
 function MoverInimigoPerseguir(inimigo)
@@ -189,7 +194,7 @@ function love.load()
   math.randomseed(os.time() + math.floor(love.timer.getTime() * 1000))
   InicializarJogador()
   InicializarSeta()
-  InicializarProximoTurnoDados()
+  InicializarDadosProximoTurno()
   InicializarInimigos(quantidadeInimigos)
 end
 
@@ -212,12 +217,12 @@ end
 
 function love.mousepressed(x, y, button, istouch, presses)
   local xMouse, yMouse = love.mouse.getPosition()
-  
+
   -- Botão esquerdo
 	if button == 1 then
     -- Marca a posição do jogador para o próximo turno
     if acaoDisponivel then
-      AtualizarJogadorPos(xMouse, yMouse)
+      AgendarJogadorPos(xMouse, yMouse)
       acaoDisponivel = false
     end
 	end
@@ -269,7 +274,7 @@ function love.draw()
     else
       -- Desenhando uma marcação para o destino do jogador do próximo turno
       love.graphics.setColor(cores.vermelho)
-      love.graphics.circle("fill", proximoTurnoDados.jogadorX, proximoTurnoDados.jogadorY, 10)
+      love.graphics.circle("fill", dadosProximoTurno.jogadorX, dadosProximoTurno.jogadorY, 10)
     end
   end
 end
